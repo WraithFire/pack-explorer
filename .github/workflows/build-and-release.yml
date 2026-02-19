@@ -1,0 +1,98 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "*"
+
+permissions:
+  contents: write
+
+jobs:
+  windows-build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          install-optional: 'true'
+          install-pyinstaller: 'true'
+
+      - name: Build EXE
+        run: |
+          pyinstaller --windowed --icon=icons/icon.ico pack_explorer.py
+
+      - name: Zip folder
+        run: |
+          Compress-Archive -Path dist/pack_explorer/* -DestinationPath dist/pack_explorer_windows.zip
+
+      - name: Release EXE
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Version ${{ github.ref_name }}
+          files: dist/pack_explorer_windows.zip
+
+  mac-intel-build:
+    runs-on: macos-15-intel
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          install-optional: 'true'
+          install-pyinstaller: 'true'
+
+      - name: Build APP
+        run: |
+          pyinstaller --windowed --icon=icons/icon.icns --osx-bundle-identifier=com.wraithfire.packexplorer pack_explorer.py
+
+      - name: Create DMG
+        run: |
+          brew install create-dmg
+          create-dmg "pack_explorer.dmg" dist/pack_explorer.app
+          mv *.dmg pack_explorer_mac_intel.dmg
+
+      - name: Release DMG
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Version ${{ github.ref_name }}
+          files: pack_explorer_mac_intel.dmg
+
+  mac-arm64-build:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          install-optional: 'true'
+          install-pyinstaller: 'true'
+
+      - name: Build App
+        run: |
+          pyinstaller --windowed --icon=icons/icon.icns --osx-bundle-identifier=com.wraithfire.packexplorer pack_explorer.py
+
+      - name: Create DMG
+        run: |
+          brew install create-dmg
+          create-dmg "pack_explorer.dmg" dist/pack_explorer.app
+          mv *.dmg pack_explorer_mac_arm64.dmg
+
+      - name: Release DMG
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Version ${{ github.ref_name }}
+          files: pack_explorer_mac_arm64.dmg

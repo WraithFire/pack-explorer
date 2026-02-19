@@ -1,0 +1,1 @@
+pmd-wan @ git+https://github.com/WraithFire/wanimation-studio.git
