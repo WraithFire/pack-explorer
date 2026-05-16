@@ -51,30 +51,30 @@ def generate_wan_frames(
     base_idx = None
     if pack_manager is not None and pack_manager.pack is not None:
         try:
+            ANIMATION_BASE_IDX = 0
+            BASE_4BPP_IDX = 1
+            IMAGE_BASE_IDX = 292
+            base_raw_data = None
             base_type = validation_info.get("base_type")
             requires_base = validation_info.get("requires_base_sprite")
-            pack_len = len(pack_manager.pack)
-            last_idx = pack_len - 1
-
-            base_raw_data = None
 
             # Base sprites need their complementary base
-            if base_type == "animation" and entry_index != last_idx:
-                base_raw_data = pack_manager.pack[last_idx]
-                base_idx = last_idx
-            elif base_type == "image" and entry_index != 0:
-                base_raw_data = pack_manager.pack[0]
-                base_idx = 0
+            if base_type == "animation" and entry_index != IMAGE_BASE_IDX:
+                base_raw_data = pack_manager.pack[IMAGE_BASE_IDX]
+                base_idx = IMAGE_BASE_IDX
+            elif base_type == "image" and entry_index != ANIMATION_BASE_IDX:
+                base_raw_data = pack_manager.pack[ANIMATION_BASE_IDX]
+                base_idx = ANIMATION_BASE_IDX
             # Non-base sprites may need a base for shared palette
-            elif requires_base == "image" and entry_index != last_idx:
-                base_raw_data = pack_manager.pack[last_idx]
-                base_idx = last_idx
-            elif requires_base == "animation" and entry_index != 0:
-                base_raw_data = pack_manager.pack[0]
-                base_idx = 0
-            elif requires_base == "4bpp" and entry_index != 1 and pack_len > 1:
-                base_raw_data = pack_manager.pack[1]
-                base_idx = 1
+            elif requires_base == "image" and entry_index != IMAGE_BASE_IDX:
+                base_raw_data = pack_manager.pack[IMAGE_BASE_IDX]
+                base_idx = IMAGE_BASE_IDX
+            elif requires_base == "animation" and entry_index != ANIMATION_BASE_IDX:
+                base_raw_data = pack_manager.pack[ANIMATION_BASE_IDX]
+                base_idx = ANIMATION_BASE_IDX
+            elif requires_base == "4bpp" and entry_index != BASE_4BPP_IDX:
+                base_raw_data = pack_manager.pack[BASE_4BPP_IDX]
+                base_idx = BASE_4BPP_IDX
 
             if base_raw_data is not None:
                 base_sprite, base_validation_info = validate_external_input(
@@ -447,6 +447,7 @@ class PackExplorer:
         self.tree.tag_configure("modified", foreground="blue")
         self.tree.grid(row=0, column=0, sticky="nsew")
         self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
+        self.tree.bind("<Escape>", self._on_deselect)
 
         scrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.tree.yview)
         scrollbar.grid(row=0, column=1, sticky="ns")
@@ -732,6 +733,9 @@ class PackExplorer:
                 self._set_status(f"Exported entry {idx:04d} to {Path(path).name}")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to export:\n{e}")
+
+    def _on_deselect(self, event=None):
+        self.tree.selection_remove(self.tree.selection())
 
     def _on_tree_select(self, event=None):
         if not self.manager.pack:
